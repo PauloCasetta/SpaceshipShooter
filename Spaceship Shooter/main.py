@@ -3,60 +3,108 @@ import random
 
 import pygame
 
-from const import ALTURA_TELA, BRANCO, DIST_ENEMY2, LARGURA_TELA, PRETO, SHOT_DAMAGE, SHOT_RATE, SHOT_SPEED, TAM_ENEMY2, TAM_SHOT_PLAYER, TAMANHO_ENEMY, TITULO, VEL_ENEMY, VEL_ENEMY2, VERDE, VERMELHO, TAMANHO_PLAYER, VEL_PLAYER, VIDA_PLAYER, DANO_COLISAO, VEL_SHOT_PLAYER
+from const import ALTURA_TELA, BRANCO, DIST_ENEMY2, LARGURA_TELA, SHOT_DAMAGE, SHOT_RATE, SHOT_SPEED, TAM_ENEMY2, TAM_SHOT_PLAYER, TAMANHO_ENEMY, TITULO, VEL_ENEMY, VEL_ENEMY2, VERDE, VERMELHO, TAMANHO_PLAYER, VEL_PLAYER, VIDA_PLAYER, DANO_COLISAO, VEL_SHOT_PLAYER
 
-# --- Inicialização do Pygame ---
-
-# --- Imagens de Fundo para Paralaxe ---
-try:
-    fundo1 = pygame.image.load('./asset/imagembg1.png').convert()
-    fundo2 = pygame.image.load('./asset/imagembg2.png').convert()
-    fundo3 = pygame.image.load('./asset/imagembg3.png').convert()
-except pygame.error as e:
-    print(f"Erro ao carregar imagens de fundo: {e}")
-    pygame.quit()
-    exit()
-
-# Escala para o tamanho da tela
-fundo1 = pygame.transform.scale(fundo1, (LARGURA_TELA, ALTURA_TELA))
-fundo2 = pygame.transform.scale(fundo2, (LARGURA_TELA, ALTURA_TELA))
-fundo3 = pygame.transform.scale(fundo3, (LARGURA_TELA, ALTURA_TELA))
-
-# --- Variáveis de Paralaxe ---
-bg1_y = 0
-bg2_y = 0
-bg3_y = 0
-
-pygame.init()
 
 # Configurações da tela
 tela = pygame.display.set_mode((LARGURA_TELA, ALTURA_TELA))
 pygame.display.set_caption(TITULO)
 relogio = pygame.time.Clock()
 
+# MENU
+menu_bg = pygame.image.load('./asset/bgmenu.png').convert_alpha()
+menu_bg = pygame.transform.scale(menu_bg, (LARGURA_TELA, ALTURA_TELA))
+game_mode = None
+
+def draw_text(surface, text, size, color, center):
+  font = pygame.font.SysFont("arial", size)
+  text_surface = font.render(text, True, color)
+  text_rect = text_surface.get_rect(center=center)
+  surface.blit(text_surface, text_rect)
+
+def main_menu(screen):
+  menu_running = True
+  click = False
+  pygame.mixer_music.load('./asset/menusong.wav') #música do menu
+  pygame.mixer_music.play(-1) #música em loop
+  while menu_running:
+      screen.blit(menu_bg, (0,0)) #fundo do menu
+
+      #título
+      draw_text(screen, "Spaceship Shooter", 48, (BRANCO), (LARGURA_TELA // 2, ALTURA_TELA // 4))
+
+      #botões
+      mx, my = pygame.mouse.get_pos()
+
+      #define botões
+      buttons = {
+          "New Game - Normal": pygame.Rect(LARGURA_TELA // 2 - 150, ALTURA_TELA // 2 - 30, 300, 50),
+          "New Game - Hard": pygame.Rect(LARGURA_TELA // 2 - 150, ALTURA_TELA // 2 + 40, 300, 50),
+          "Exit": pygame.Rect(LARGURA_TELA // 2 - 150, ALTURA_TELA // 2 + 100, 300, 50)
+      }
+
+      for name, rect in buttons.items():
+          color = (70, 70, 70)
+          if rect.collidepoint((mx, my)):
+              color = (100, 100, 100)
+              if click:
+                  if name == "New Game - Normal":
+                      pygame.time.set_timer(SPAWN_INIMIGO_EVENT, 2000)
+                      return
+                  elif name == "New Game - Hard":
+                      pygame.time.set_timer(SPAWN_INIMIGO_EVENT, 1000)
+                      return
+                  elif name == "Exit":
+                      pygame.quit()
+                      sys.exit()
+          pygame.draw.rect(screen, color, rect)
+          draw_text(screen, name, 28, (255, 255, 255), rect.center)
+
+      for event in pygame.event.get():
+          if event.type == pygame.QUIT:
+              pygame.quit()
+              sys.exit()
+          if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+              click = True
+
+      pygame.display.flip()
+      pygame.time.Clock().tick(60)
+
+# Imagens de Fundo para Paralaxe
+fundo1 = pygame.image.load('./asset/imagembg1.png').convert_alpha()
+fundo2 = pygame.image.load('./asset/imagembg2.png').convert_alpha()
+fundo3 = pygame.image.load('./asset/imagembg3.png').convert_alpha()
+
+# Escala para o tamanho da tela
+fundo1 = pygame.transform.scale(fundo1, (LARGURA_TELA, ALTURA_TELA))
+fundo2 = pygame.transform.scale(fundo2, (LARGURA_TELA, ALTURA_TELA))
+fundo3 = pygame.transform.scale(fundo3, (LARGURA_TELA, ALTURA_TELA))
+
+# Variáveis de Paralaxe
+bg1_y = 0
+bg2_y = 0
+bg3_y = 0
+
+pygame.init()
+
 # Fontes
 fonte = pygame.font.Font(None, 36)
 fonte_game_over = pygame.font.Font(None, 72)
 
-# --- Carregamento das Imagens ---
-try:
-    player_img = pygame.image.load('./asset/player.png').convert_alpha()
-    player_shot_img = pygame.image.load('./asset/shot.png').convert_alpha()
+# Carregamento das Imagens
 
-    # Sprites dos inimigos
-    enemy_chaser_img = pygame.image.load('./asset/enemy.png').convert_alpha()
-    enemy_shooter_img = pygame.image.load('./asset/enemy_shooter.png').convert_alpha() 
+player_img = pygame.image.load('./asset/player.png').convert_alpha()
+player_shot_img = pygame.image.load('./asset/shot.png').convert_alpha()
 
-    # Sprites dos tiros dos inimigos
-    enemy_shot_red_img = pygame.image.load('./asset/enemy_shot_red.png').convert_alpha() 
-    enemy_shot_purple_img = pygame.image.load('./asset/enemy_shot_purple.png').convert_alpha()
+# Sprites dos inimigos
+enemy_chaser_img = pygame.image.load('./asset/enemy.png').convert_alpha()
+enemy_shooter_img = pygame.image.load('./asset/enemy_shooter.png').convert_alpha() 
 
-except pygame.error as e:
-    print(f"Erro ao carregar uma das imagens! Verifique os nomes dos arquivos. Erro: {e}")
-    pygame.quit()
-    exit()
+# Sprites dos tiros dos inimigos
+enemy_shot_red_img = pygame.image.load('./asset/enemy_shot_red.png').convert_alpha() 
+enemy_shot_purple_img = pygame.image.load('./asset/enemy_shot_purple.png').convert_alpha()
 
-# --- Classes do Jogo ---
+# Classes do Jogo
 
 class Jogador(pygame.sprite.Sprite):
     def __init__(self):
@@ -110,7 +158,7 @@ class ProjetilJogador(pygame.sprite.Sprite):
         self.rect.y += self.dy * self.velocidade
         if not tela.get_rect().colliderect(self.rect): self.kill()
 
-# NOVO: Classe base para projéteis de inimigos 
+# Classe base para projéteis de inimigos 
 class ProjetilInimigo(pygame.sprite.Sprite):
     def __init__(self, pos_inicial, jogador, imagem, tamanho, velocidade, dano):
         super().__init__()
@@ -133,10 +181,10 @@ class ProjetilInimigo(pygame.sprite.Sprite):
         if not tela.get_rect().colliderect(self.rect): self.kill()
 
 
-# --- Classes de Inimigos ---
+# Classes de Inimigos
 
 class InimigoPerseguidor(pygame.sprite.Sprite):
-    """ Inimigo que apenas persegue o jogador. """
+    # Inimigo que apenas persegue o jogador.
     def __init__(self, jogador):
         super().__init__()
         self.jogador = jogador
@@ -166,7 +214,7 @@ class InimigoPerseguidor(pygame.sprite.Sprite):
 
 
 class InimigoAtirador(pygame.sprite.Sprite):
-    """ Inimigo que mantém distância e atira. """
+    # Inimigo que mantém distância e atira.
     def __init__(self, jogador):
         super().__init__()
         self.jogador = jogador
@@ -215,7 +263,7 @@ class InimigoAtirador(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=self.rect.center)
 
 
-# --- Grupos de Sprites ---
+# Grupos de Sprites
 todos_sprites = pygame.sprite.Group()
 inimigos = pygame.sprite.Group()
 projeteis_jogador = pygame.sprite.Group() 
@@ -224,20 +272,23 @@ projeteis_inimigos = pygame.sprite.Group() # NOVO grupo
 jogador = Jogador()
 todos_sprites.add(jogador)
 
-# --- Variáveis do Jogo ---
+# Variáveis do Jogo
 pontuacao = 0
 game_over = False
-SPAWN_INIMIGO_EVENT = pygame.USEREVENT + 1 
-pygame.time.set_timer(SPAWN_INIMIGO_EVENT, 2000) 
+SPAWN_INIMIGO_EVENT = pygame.USEREVENT + 1
 
-# --- Loop Principal ---
+# Loop Principal
 rodando = True
-while rodando:
+main_menu(tela)
+# música do jogo
+pygame.mixer_music.load('./asset/gamesong.wav') # música do jogo
+pygame.mixer_music.play(-1) # música em loop
 
+while rodando:
     # Atualiza posições das camadas de fundo
-    bg1_y += 0.5  # camada mais distante
-    bg2_y += 1.0  # camada intermediária
-    bg3_y += 2.0  # camada mais próxima
+    bg1_y += 0.05  # camada mais distante
+    bg2_y += 0.06  # camada intermediária
+    bg3_y += 0.1  # camada mais próxima
 
     # Reinicia o loop vertical
     if bg1_y >= ALTURA_TELA: bg1_y = 0
@@ -260,6 +311,10 @@ while rodando:
             todos_sprites.empty(); inimigos.empty(); projeteis_jogador.empty(); projeteis_inimigos.empty()
             jogador = Jogador()
             todos_sprites.add(jogador)
+        if event.type == pygame.KEYDOWN and game_over and event.key == pygame.K_m:
+            # Retorna ao menu
+            main_menu(tela)
+            
 
     if not game_over:
         todos_sprites.update()
@@ -271,7 +326,6 @@ while rodando:
                 if tiro:
                     todos_sprites.add(tiro); projeteis_inimigos.add(tiro)
 
-        # Colisões
         # Tiros do jogador acertam inimigos
         colisoes_tiro_inimigo = pygame.sprite.groupcollide(projeteis_jogador, inimigos, True, True)
         for tiro, inimigo_atingido in colisoes_tiro_inimigo.items():
@@ -291,9 +345,7 @@ while rodando:
             jogador.vida = 0
             game_over = True
 
-    # --- Desenho ---
-    
-    # --- Desenho do Fundo com Paralaxe ---
+    # Desenho do Fundo com Paralaxe
     tela.blit(fundo1, (0, bg1_y - ALTURA_TELA))
     tela.blit(fundo1, (0, bg1_y))
     tela.blit(fundo2, (0, bg2_y - ALTURA_TELA))
@@ -315,8 +367,10 @@ while rodando:
     if game_over:
         texto_go = fonte_game_over.render("GAME OVER", True, VERMELHO)
         texto_restart = fonte.render("Pressione 'R' para reiniciar", True, BRANCO)
+        texto_menu = fonte.render("Pressione 'M' para voltar ao menu", True, BRANCO)
         tela.blit(texto_go, (LARGURA_TELA/2 - texto_go.get_width()/2, ALTURA_TELA/2 - texto_go.get_height()/2))
         tela.blit(texto_restart, (LARGURA_TELA/2 - texto_restart.get_width()/2, ALTURA_TELA/2 + 50))
+        tela.blit(texto_menu, (LARGURA_TELA/2 - texto_menu.get_width()/2, ALTURA_TELA/2 + 80))
 
     pygame.display.flip()
 
