@@ -27,6 +27,8 @@ def main_menu(screen):
   click = False
   pygame.mixer_music.load('./asset/menusong.wav') #música do menu
   pygame.mixer_music.play(-1) #música em loop
+  pygame.mixer.music.set_volume(0.01)
+  
   while menu_running:
       screen.blit(menu_bg, (0,0)) #fundo do menu
 
@@ -50,9 +52,15 @@ def main_menu(screen):
               if click:
                   if name == "New Game - Normal":
                       pygame.time.set_timer(SPAWN_INIMIGO_EVENT, 2000)
+                      pygame.mixer_music.load('./asset/gamesong.wav') # música do jogo
+                      pygame.mixer_music.play(-1) #música em loop
+                      pygame.mixer.music.set_volume(0.01)
                       return
                   elif name == "New Game - Hard":
                       pygame.time.set_timer(SPAWN_INIMIGO_EVENT, 1000)
+                      pygame.mixer_music.load('./asset/gamesong.wav') # música do jogo
+                      pygame.mixer_music.play(-1) #música em loop
+                      pygame.mixer.music.set_volume(0.01)
                       return
                   elif name == "Exit":
                       pygame.quit()
@@ -267,7 +275,7 @@ class InimigoAtirador(pygame.sprite.Sprite):
 todos_sprites = pygame.sprite.Group()
 inimigos = pygame.sprite.Group()
 projeteis_jogador = pygame.sprite.Group() 
-projeteis_inimigos = pygame.sprite.Group() # NOVO grupo
+projeteis_inimigos = pygame.sprite.Group()
 
 jogador = Jogador()
 todos_sprites.add(jogador)
@@ -280,11 +288,9 @@ SPAWN_INIMIGO_EVENT = pygame.USEREVENT + 1
 # Loop Principal
 rodando = True
 main_menu(tela)
-# música do jogo
-pygame.mixer_music.load('./asset/gamesong.wav') # música do jogo
-pygame.mixer_music.play(-1) # música em loop
 
 while rodando:
+
     # Atualiza posições das camadas de fundo
     bg1_y += 0.05  # camada mais distante
     bg2_y += 0.06  # camada intermediária
@@ -313,6 +319,10 @@ while rodando:
             todos_sprites.add(jogador)
         if event.type == pygame.KEYDOWN and game_over and event.key == pygame.K_m:
             # Retorna ao menu
+            game_over = False; pontuacao = 0
+            todos_sprites.empty(); inimigos.empty(); projeteis_jogador.empty(); projeteis_inimigos.empty()
+            jogador = Jogador()
+            todos_sprites.add(jogador)
             main_menu(tela)
             
 
